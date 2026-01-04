@@ -298,6 +298,78 @@ backend:
         agent: "testing"
         comment: "COMPREHENSIVE TESTING COMPLETED: ✅ GET /api/notifications returns list correctly ✅ GET /api/notifications/unread/count returns count correctly ✅ PATCH /api/notifications/{id}/read marks notification as read ✅ All notification endpoints working perfectly"
 
+  - task: "Comunicados system - Create comunicado for all users (todos)"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ POST /api/comunicados with tipo_destinatario='todos' creates comunicado successfully ✅ All emisores receive notifications ✅ Admin can see all comunicados ✅ Comunicado creation for all users working perfectly"
+
+  - task: "Comunicados system - Create comunicado for specific lines"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ POST /api/comunicados with tipo_destinatario='lineas' and lineas_destino='A,B' creates comunicado successfully ✅ Only users from specified lines receive notifications ✅ Line-specific comunicado targeting working perfectly"
+
+  - task: "Comunicados system - Create comunicado for specific users"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ POST /api/comunicados with tipo_destinatario='usuarios' and specific user IDs creates comunicado successfully ✅ Only targeted users receive notifications ✅ User-specific comunicado targeting working perfectly"
+
+  - task: "Comunicados system - List and filter comunicados by user role"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ GET /api/comunicados as admin returns all comunicados ✅ GET /api/comunicados as emisor returns only relevant comunicados (todos + their line) ✅ Comunicado filtering by user role working perfectly"
+
+  - task: "Comunicados system - Emisor responds to comunicado"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ POST /api/comunicados/{id}/respuestas allows emisor to respond ✅ Response is added to comunicado ✅ Admin receives notification when emisor responds ✅ Emisor response functionality working perfectly"
+
+  - task: "Comunicados system - Admin delete comunicado and access control"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ DELETE /api/comunicados/{id} allows admin to delete comunicados ✅ Emisores cannot delete comunicados (403 Forbidden) ✅ Access control for comunicado deletion working perfectly"
+
 test_plan:
   current_focus: []
   stuck_tasks: []
