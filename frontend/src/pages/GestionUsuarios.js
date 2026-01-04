@@ -27,6 +27,8 @@ const GestionUsuarios = () => {
   });
   const [creating, setCreating] = useState(false);
   const [showInvitationModal, setShowInvitationModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [usuarioEditar, setUsuarioEditar] = useState(null);
 
   useEffect(() => {
     initializePage();
