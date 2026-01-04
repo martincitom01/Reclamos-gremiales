@@ -38,8 +38,8 @@ security = HTTPBearer()
 # Create the main app without a prefix
 app = FastAPI()
 
-# Mount uploads directory for serving files
-app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+# Mount uploads directory for serving files (use /api/uploads for proper routing)
+app.mount("/api/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -503,7 +503,7 @@ async def subir_archivo(reclamo_id: str, file: UploadFile = File(...), current_u
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    file_url = f"/uploads/{filename}"
+    file_url = f"/api/uploads/{filename}"
     
     await db.reclamos.update_one(
         {"id": reclamo_id},
