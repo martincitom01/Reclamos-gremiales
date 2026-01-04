@@ -232,3 +232,23 @@ agent_communication:
          - All user edit functionality working perfectly
       
       CONCLUSION: Both requested features are fully functional. No critical issues found. Ready for production use.
+  - agent: "main"
+    message: |
+      NOTIFICATION SOUND FEATURE IMPLEMENTED:
+      
+      Backend changes:
+      - Modified crear_reclamo endpoint to notify all admins when a new reclamo is created
+      
+      Frontend changes (NotificationBell.js):
+      - Added Web Audio API for notification sound (pleasant two-tone chime)
+      - Added sound toggle button (Volume2/VolumeX icons)
+      - Reduced polling interval from 30s to 10s for faster notifications
+      - Sound plays when NEW notifications arrive (not on initial load)
+      - Browser notification API integration for system-level notifications
+      - Sound preference saved to localStorage
+      
+      Testing needed:
+      - Test creating new reclamo as emisor → admin should receive notification with sound
+      - Test admin responding to reclamo → emisor should receive notification with sound
+      - Test sound toggle button (on/off)
+      - Test that sound only plays for NEW notifications, not on page refresh
