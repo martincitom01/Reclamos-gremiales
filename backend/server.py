@@ -358,6 +358,17 @@ async def crear_reclamo(input: ReclamoCreate, current_user: dict = Depends(get_c
         doc['fecha_cierre'] = doc['fecha_cierre'].isoformat()
     
     await db.reclamos.insert_one(doc)
+    
+    # Notify all admins about the new reclamo
+    admins = await db.users.find({"role": "ADMIN"}, {"_id": 0}).to_list(100)
+    for admin in admins:
+        await create_notification(
+            user_id=admin["id"],
+            reclamo_id=reclamo_obj.id,
+            reclamo_numero=numero,
+            message=f"Nuevo reclamo creado: {numero} - Línea {input.linea}"
+        )
+    
     return reclamo_obj
 
 @api_router.get("/reclamos", response_model=List[Reclamo])
