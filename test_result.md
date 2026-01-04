@@ -252,3 +252,139 @@ agent_communication:
       - Test admin responding to reclamo → emisor should receive notification with sound
       - Test sound toggle button (on/off)
       - Test that sound only plays for NEW notifications, not on page refresh
+
+backend:
+  - task: "Notification system - Admin receives notification when new reclamo is created"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ Emisor login (Luisina/123456) successful ✅ Created new reclamo as emisor ✅ Admin receives notification for new reclamo ✅ Notification contains correct reclamo ID and message ✅ Admin notification flow working perfectly"
+
+  - task: "Notification system - Emisor receives notification when admin responds"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ Admin successfully added comment to reclamo ✅ Emisor receives notification for admin response ✅ Notification contains correct message about admin response ✅ Emisor notification flow working perfectly"
+
+  - task: "Notification endpoints validation"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: ✅ GET /api/notifications returns list correctly ✅ GET /api/notifications/unread/count returns count correctly ✅ PATCH /api/notifications/{id}/read marks notification as read ✅ All notification endpoints working perfectly"
+
+test_plan:
+  current_focus: []
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Implemented two key fixes:
+      1. FILE UPLOAD FIX: Changed static file mount from /uploads to /api/uploads to work with Kubernetes routing. Migrated existing file paths in database.
+      2. USER EDIT FEATURE: Created PUT /api/users/{user_id} endpoint and EditarUsuarioModal.js component. Admin can now edit any user's username, email, password, and assigned line.
+      
+      Please test:
+      - Navigate to a reclamo with image attachments and verify images are viewable
+      - Navigate to /usuarios, click Edit on any user, modify fields, and save
+      - Verify updated user data persists
+      
+      Admin access: Navigate to root URL (no login required)
+      Test user credentials available in the user list
+  - agent: "testing"
+    message: |
+      BACKEND TESTING COMPLETED SUCCESSFULLY - ALL TESTS PASSED (14/14)
+      
+      ✅ ADMIN ACCESS: Working perfectly - returns token and user data
+      ✅ FILE/IMAGE VIEWING: Fixed and working - files accessible via /api/uploads path
+      ✅ USER UPDATE ENDPOINT: Comprehensive testing completed with all scenarios:
+         - Username updates ✅
+         - Email updates ✅  
+         - Password updates with proper hashing ✅
+         - Linea_asignada updates ✅
+         - Password validation (min 6 chars) ✅
+         - Username uniqueness validation ✅
+         - Email uniqueness validation ✅
+      
+      Both requested features are working correctly. Backend APIs are stable and functional.
+  - agent: "testing"
+    message: |
+      FRONTEND UI TESTING COMPLETED SUCCESSFULLY - ALL TESTS PASSED (2/2)
+      
+      ✅ IMAGE/FILE VIEWING FROM ADMIN PANEL:
+         - Successfully navigated to reclamo 'LíneaA-CON-0001'
+         - Found 'Archivos Adjuntos' section with attached file
+         - 'Ver archivo 1' link has correct URL format (/api/uploads/...)
+         - File is accessible (HTTP 200 response)
+         - Image viewing functionality working perfectly
+      
+      ✅ USER EDIT MODAL:
+         - Successfully found user 'uno' in user management
+         - Edit button opens modal with pre-filled data
+         - Email modification works correctly
+         - Save functionality works with success toast
+         - Email updates reflected in user list
+         - Email restoration works correctly
+         - All user edit functionality working perfectly
+      
+      CONCLUSION: Both requested features are fully functional. No critical issues found. Ready for production use.
+  - agent: "main"
+    message: |
+      NOTIFICATION SOUND FEATURE IMPLEMENTED:
+      
+      Backend changes:
+      - Modified crear_reclamo endpoint to notify all admins when a new reclamo is created
+      
+      Frontend changes (NotificationBell.js):
+      - Added Web Audio API for notification sound (pleasant two-tone chime)
+      - Added sound toggle button (Volume2/VolumeX icons)
+      - Reduced polling interval from 30s to 10s for faster notifications
+      - Sound plays when NEW notifications arrive (not on initial load)
+      - Browser notification API integration for system-level notifications
+      - Sound preference saved to localStorage
+      
+      Testing needed:
+      - Test creating new reclamo as emisor → admin should receive notification with sound
+      - Test admin responding to reclamo → emisor should receive notification with sound
+      - Test sound toggle button (on/off)
+      - Test that sound only plays for NEW notifications, not on page refresh
+  - agent: "testing"
+    message: |
+      NOTIFICATION SYSTEM BACKEND TESTING COMPLETED SUCCESSFULLY - ALL TESTS PASSED (11/11)
+      
+      ✅ ADMIN NOTIFICATION FLOW:
+         - Emisor login (Luisina/123456) successful
+         - Created new reclamo as emisor (triggers admin notification)
+         - Admin receives notification for new reclamo correctly
+         - Notification contains proper reclamo ID and message
+      
+      ✅ EMISOR NOTIFICATION FLOW:
+         - Admin successfully added comment to reclamo
+         - Emisor receives notification for admin response correctly
+         - Notification contains proper message about admin response
+      
+      ✅ NOTIFICATION ENDPOINTS:
+         - GET /api/notifications returns list correctly
+         - GET /api/notifications/unread/count returns count correctly
+         - PATCH /api/notifications/{id}/read marks notification as read
+      
+      CONCLUSION: All notification system backend functionality is working perfectly. The notification flows are properly implemented and tested. Backend is ready for frontend sound integration testing.
