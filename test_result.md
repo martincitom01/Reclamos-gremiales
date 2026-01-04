@@ -145,11 +145,14 @@ frontend:
     file: "/app/frontend/src/pages/DetalleReclamo.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Files are now accessible via /api/uploads path. The link construction in DetalleReclamo.js uses BACKEND_URL + archivo path which now works correctly."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE UI TESTING COMPLETED: ✅ Successfully navigated to reclamo 'LíneaA-CON-0001' ✅ Found 'Archivos Adjuntos' section with 1 file ✅ 'Ver archivo 1' link has correct URL format (/api/uploads/10e31c32-d193-47d8-9706-c4139aba6773.jpeg) ✅ File is accessible (HTTP 200 response) ✅ Image/file viewing functionality working perfectly"
 
   - task: "Edit user modal in GestionUsuarios"
     implemented: true
@@ -157,11 +160,14 @@ frontend:
     file: "/app/frontend/src/pages/GestionUsuarios.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Created EditarUsuarioModal component. Added Edit button to each user row. Modal allows editing username, email, password, and line assignment."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE UI TESTING COMPLETED: ✅ Successfully found user 'uno' in user management table ✅ Edit button opens modal with pre-filled data (username: uno, email: uno_test@uta.com) ✅ Email field can be modified ✅ 'Guardar Cambios' button saves successfully ✅ Success toast appears: 'Usuario actualizado exitosamente' ✅ Email updates are reflected in user list ✅ Email restoration works correctly ✅ All user edit functionality working perfectly"
 
 metadata:
   created_by: "main_agent"
