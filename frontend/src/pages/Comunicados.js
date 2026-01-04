@@ -95,8 +95,6 @@ const Comunicados = () => {
       setLoading(false);
     }
   };
-    }
-  };
 
   const handleEnviar = async (e) => {
     e.preventDefault();
