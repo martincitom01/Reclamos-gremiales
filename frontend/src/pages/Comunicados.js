@@ -14,7 +14,7 @@ const LINEAS = ['A', 'B', 'C', 'D', 'E', 'H', 'Premetro'];
 
 const Comunicados = () => {
   const navigate = useNavigate();
-  const { getAuthHeaders, user, isAuthenticated } = useAuth();
+  const { getAuthHeaders, user, isAuthenticated, loading: authLoading } = useAuth();
   const [comunicados, setComunicados] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,48 +32,69 @@ const Comunicados = () => {
   });
 
   useEffect(() => {
-    initializePage();
-  }, []);
-
-  const initializePage = async () => {
-    // If not authenticated and no admin initialized, get admin access
-    if (!isAuthenticated && !localStorage.getItem('token') && !localStorage.getItem('adminInitialized')) {
-      try {
-        const response = await axios.get(`${API}/admin/access`);
-        localStorage.setItem('token', response.data.access_token);
-        localStorage.setItem('adminInitialized', 'true');
-        window.location.reload();
-      } catch (error) {
-        console.error('Error getting admin access:', error);
-        navigate('/emisor-login');
-      }
-    } else {
+    // Wait for auth to finish loading
+    if (authLoading) return;
+    
+    // If user is authenticated, load data
+    if (isAuthenticated && user) {
       cargarDatos();
+    } else if (!isAuthenticated) {
+      // Not authenticated - try admin access or redirect
+      const token = localStorage.getItem('token');
+      if (token) {
+        // Has token, try to load
+        cargarDatos();
+      } else if (localStorage.getItem('adminInitialized')) {
+        // Admin was initialized but no token - reload
+        window.location.reload();
+      } else {
+        // No auth at all - try admin access
+        initializeAdminAccess();
+      }
+    }
+  }, [authLoading, isAuthenticated, user]);
+
+  const initializeAdminAccess = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/access`);
+      localStorage.setItem('token', response.data.access_token);
+      localStorage.setItem('adminInitialized', 'true');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error getting admin access:', error);
+      navigate('/emisor-login');
     }
   };
 
   const cargarDatos = async () => {
+    setLoading(true);
     try {
       const headers = getAuthHeaders();
-      const [comResponse] = await Promise.all([
-        axios.get(`${API}/comunicados`, { headers })
-      ]);
+      
+      // Load comunicados
+      const comResponse = await axios.get(`${API}/comunicados`, { headers });
       setComunicados(comResponse.data);
       
-      // Only load users if admin
+      // Only load users list if admin (for recipient selection)
       if (user?.role === 'ADMIN') {
-        const usersResponse = await axios.get(`${API}/users`, { headers });
-        setUsuarios(usersResponse.data.filter(u => u.role === 'EMISOR_RECLAMO'));
+        try {
+          const usersResponse = await axios.get(`${API}/users`, { headers });
+          setUsuarios(usersResponse.data.filter(u => u.role === 'EMISOR_RECLAMO'));
+        } catch (err) {
+          console.error('Error loading users:', err);
+        }
       }
     } catch (error) {
       console.error('Error cargando datos:', error);
       if (error.response?.status === 401) {
+        // Token expired or invalid
+        localStorage.removeItem('token');
         navigate('/emisor-login');
-      } else {
-        toast.error('Error al cargar comunicados');
       }
     } finally {
       setLoading(false);
+    }
+  };
     }
   };
 
