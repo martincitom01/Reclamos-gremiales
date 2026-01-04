@@ -789,6 +789,50 @@ async def change_user_role(user_id: str, role: str, current_admin: dict = Depend
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": f"Role updated to {role}"}
 
+@api_router.put("/users/{user_id}")
+async def update_user(user_id: str, user_update: UserUpdateRequest, current_admin: dict = Depends(get_current_admin)):
+    """Update any user's information (admin only)"""
+    # Check if user exists
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    update_data = {}
+    
+    # Check username uniqueness if being changed
+    if user_update.username and user_update.username != user.get("username"):
+        existing = await db.users.find_one({"username": user_update.username, "id": {"$ne": user_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Username already exists")
+        update_data["username"] = user_update.username
+    
+    # Check email uniqueness if being changed
+    if user_update.email and user_update.email != user.get("email"):
+        existing = await db.users.find_one({"email": user_update.email, "id": {"$ne": user_id}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        update_data["email"] = user_update.email
+    
+    # Update password if provided
+    if user_update.password:
+        if len(user_update.password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        update_data["password_hash"] = get_password_hash(user_update.password)
+    
+    # Update assigned line if provided
+    if user_update.linea_asignada is not None:
+        update_data["linea_asignada"] = user_update.linea_asignada if user_update.linea_asignada else None
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No data to update")
+    
+    await db.users.update_one({"id": user_id}, {"$set": update_data})
+    
+    # Get updated user
+    updated_user = await db.users.find_one({"id": user_id}, {"_id": 0, "password_hash": 0})
+    
+    return {"message": "User updated successfully", "user": updated_user}
+
 @api_router.get("/estadisticas", response_model=EstadisticasResponse)
 async def obtener_estadisticas(current_user: dict = Depends(get_current_user)):
     query = {}
