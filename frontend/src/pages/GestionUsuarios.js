@@ -402,6 +402,17 @@ Usuario creado exitosamente:
           onSuccess={cargarUsuarios}
           getAuthHeaders={getAuthHeaders}
         />
+
+        <EditarUsuarioModal
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setUsuarioEditar(null);
+          }}
+          onSuccess={cargarUsuarios}
+          usuario={usuarioEditar}
+          getAuthHeaders={getAuthHeaders}
+        />
       </div>
     </div>
   );
