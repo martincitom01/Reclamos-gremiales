@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Backend API Testing for Sistema de Reclamos Gremiales UTA
-Testing focus: Notification system with sound feature
+SEGUNDA RONDA - Comprehensive testing of all system components
 """
 
 import requests
@@ -16,6 +16,13 @@ load_dotenv(Path(__file__).parent / 'frontend' / '.env')
 # Configuration
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://metrofix-1.preview.emergentagent.com')
 API_BASE = f"{BASE_URL}/api"
+
+# Test users as specified in review request
+TEST_USERS = [
+    {"username": "martin", "password": "94017448", "expected_line": "A"},
+    {"username": "Mara", "password": "123456", "expected_line": "H"},
+    {"username": "Luisina", "password": "123456", "expected_line": "A"}
+]
 
 class TestResults:
     def __init__(self):
