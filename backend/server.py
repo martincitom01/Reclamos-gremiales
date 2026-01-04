@@ -181,6 +181,39 @@ class EstadisticasResponse(BaseModel):
     tiempo_promedio_resolucion: Optional[float]
     reclamos_por_mes: dict
 
+# Comunicados Models
+class ComunicadoRespuesta(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    username: str
+    texto: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Comunicado(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    titulo: str
+    mensaje: str
+    imagen: Optional[str] = None  # URL de imagen adjunta
+    tipo_destinatario: str  # "todos", "lineas", "usuarios"
+    lineas_destino: List[str] = []  # Para tipo "lineas"
+    usuarios_destino: List[str] = []  # Para tipo "usuarios" (IDs de usuarios)
+    autor_id: str
+    autor_nombre: str
+    respuestas: List[dict] = []
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class ComunicadoCreate(BaseModel):
+    titulo: str
+    mensaje: str
+    tipo_destinatario: str  # "todos", "lineas", "usuarios"
+    lineas_destino: List[str] = []
+    usuarios_destino: List[str] = []
+
+class ComunicadoRespuestaCreate(BaseModel):
+    texto: str
+
 # Password and JWT utilities
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
