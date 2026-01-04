@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Backend API Testing for Sistema de Reclamos Gremiales UTA
-Testing focus: File/Image viewing fix and User update endpoint
+Testing focus: Notification system with sound feature
 """
 
 import requests
