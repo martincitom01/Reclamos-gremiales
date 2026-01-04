@@ -119,6 +119,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Fixed file uploads - changed mount path from /uploads to /api/uploads for proper Kubernetes routing. Migrated existing file paths in database."
+      - working: true
+        agent: "testing"
+        comment: "FILE ACCESS VERIFIED: ✅ Files are properly accessible via /api/uploads path ✅ Found reclamo with attached files ✅ File URL format correct (/api/uploads/filename) ✅ HTTP HEAD request to file returns 200 OK. Kubernetes routing fix working perfectly."
 
   - task: "User update endpoint (PUT /api/users/{user_id})"
     implemented: true
