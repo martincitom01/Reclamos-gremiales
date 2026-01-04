@@ -165,7 +165,7 @@ const Dashboard = () => {
             {user?.role === 'ADMIN' ? (
               <button 
                 className="nav-button" 
-                onClick={() => navigate('/emisor-login')}}
+                onClick={() => navigate('/emisor-login')}
                 data-testid="emisor-access-btn"
                 style={{ background: 'rgba(74, 144, 226, 0.2)', borderColor: '#4a90e2' }}
               >
