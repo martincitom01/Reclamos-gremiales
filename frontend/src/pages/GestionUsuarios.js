@@ -334,13 +334,36 @@ Usuario creado exitosamente:
                         {formatearFecha(usuario.created_at)}
                       </td>
                       <td style={{ padding: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                           {usuario.linea_asignada && usuario.role === 'EMISOR_RECLAMO' && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669' }}>
                               <Check size={16} />
                               <span style={{ fontSize: '0.85rem', fontWeight: '500' }}>Configurado</span>
                             </div>
                           )}
+                          <button
+                            onClick={() => handleEditUser(usuario)}
+                            style={{
+                              background: '#dbeafe',
+                              color: '#1e40af',
+                              border: 'none',
+                              padding: '0.4rem 0.75rem',
+                              borderRadius: '6px',
+                              fontSize: '0.85rem',
+                              fontWeight: '500',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.3rem'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#bfdbfe'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = '#dbeafe'}
+                            data-testid={`edit-user-${usuario.id}`}
+                          >
+                            <Edit2 size={14} />
+                            Editar
+                          </button>
                           {usuario.id !== currentUser?.id && (
                             <button
                               onClick={() => handleDeleteUser(usuario.id, usuario.username)}
