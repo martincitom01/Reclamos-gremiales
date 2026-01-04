@@ -154,10 +154,18 @@ const Dashboard = () => {
                 Usuarios
               </button>
             )}
+            <button 
+              className="nav-button" 
+              onClick={() => navigate('/comunicados')}
+              data-testid="nav-comunicados-btn"
+            >
+              <MessageSquare size={16} style={{display: 'inline', marginRight: '4px'}} />
+              Comunicados
+            </button>
             {user?.role === 'ADMIN' ? (
               <button 
                 className="nav-button" 
-                onClick={() => navigate('/emisor-login')}
+                onClick={() => navigate('/emisor-login')}}
                 data-testid="emisor-access-btn"
                 style={{ background: 'rgba(74, 144, 226, 0.2)', borderColor: '#4a90e2' }}
               >
