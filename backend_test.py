@@ -537,6 +537,235 @@ def test_notification_endpoints(admin_token):
     
     return results
 
+def test_comunicados_system(admin_token, emisor_token):
+    """Test the complete comunicados system"""
+    results = TestResults()
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+    emisor_headers = {"Authorization": f"Bearer {emisor_token}"}
+    
+    # Get users for testing specific user targeting
+    try:
+        users_response = requests.get(f"{API_BASE}/users", headers=admin_headers)
+        if users_response.status_code != 200:
+            results.log_fail("Get users for comunicados test", f"HTTP {users_response.status_code}")
+            return results
+        users = users_response.json()
+        test_user = None
+        for user in users:
+            if user.get('role') == 'EMISOR_RECLAMO':
+                test_user = user
+                break
+        if not test_user:
+            results.log_fail("Find test user for comunicados", "No emisor user found")
+            return results
+    except Exception as e:
+        results.log_fail("Get users for comunicados test", f"Request failed: {str(e)}")
+        return results
+    
+    # Test 1: Create comunicado for "todos" (all users)
+    print("  📢 Testing comunicado creation for 'todos'...")
+    try:
+        params = {
+            "titulo": "Comunicado para Todos",
+            "mensaje": "Este es un mensaje importante para todos los emisores",
+            "tipo_destinatario": "todos"
+        }
+        response = requests.post(f"{API_BASE}/comunicados", headers=admin_headers, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'comunicado_id' in data and 'destinatarios' in data:
+                results.log_pass("Create comunicado for 'todos'")
+                comunicado_todos_id = data['comunicado_id']
+            else:
+                results.log_fail("Create comunicado for 'todos'", "Missing comunicado_id or destinatarios in response")
+                comunicado_todos_id = None
+        else:
+            results.log_fail("Create comunicado for 'todos'", f"HTTP {response.status_code}: {response.text}")
+            comunicado_todos_id = None
+    except Exception as e:
+        results.log_fail("Create comunicado for 'todos'", f"Request failed: {str(e)}")
+        comunicado_todos_id = None
+    
+    # Test 2: Create comunicado for specific lines
+    print("  📢 Testing comunicado creation for specific lines...")
+    try:
+        params = {
+            "titulo": "Comunicado para Líneas A y B",
+            "mensaje": "Mensaje específico para las líneas A y B",
+            "tipo_destinatario": "lineas",
+            "lineas_destino": "A,B"
+        }
+        response = requests.post(f"{API_BASE}/comunicados", headers=admin_headers, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'comunicado_id' in data:
+                results.log_pass("Create comunicado for specific lines")
+                comunicado_lineas_id = data['comunicado_id']
+            else:
+                results.log_fail("Create comunicado for specific lines", "Missing comunicado_id in response")
+                comunicado_lineas_id = None
+        else:
+            results.log_fail("Create comunicado for specific lines", f"HTTP {response.status_code}: {response.text}")
+            comunicado_lineas_id = None
+    except Exception as e:
+        results.log_fail("Create comunicado for specific lines", f"Request failed: {str(e)}")
+        comunicado_lineas_id = None
+    
+    # Test 3: Create comunicado for specific users
+    print("  📢 Testing comunicado creation for specific users...")
+    try:
+        params = {
+            "titulo": "Comunicado para Usuario Específico",
+            "mensaje": f"Mensaje específico para {test_user['username']}",
+            "tipo_destinatario": "usuarios",
+            "usuarios_destino": test_user['id']
+        }
+        response = requests.post(f"{API_BASE}/comunicados", headers=admin_headers, params=params)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'comunicado_id' in data:
+                results.log_pass("Create comunicado for specific users")
+                comunicado_usuarios_id = data['comunicado_id']
+            else:
+                results.log_fail("Create comunicado for specific users", "Missing comunicado_id in response")
+                comunicado_usuarios_id = None
+        else:
+            results.log_fail("Create comunicado for specific users", f"HTTP {response.status_code}: {response.text}")
+            comunicado_usuarios_id = None
+    except Exception as e:
+        results.log_fail("Create comunicado for specific users", f"Request failed: {str(e)}")
+        comunicado_usuarios_id = None
+    
+    # Test 4: List comunicados as admin (should see all)
+    print("  📋 Testing list comunicados as admin...")
+    try:
+        response = requests.get(f"{API_BASE}/comunicados", headers=admin_headers)
+        
+        if response.status_code == 200:
+            comunicados = response.json()
+            if isinstance(comunicados, list):
+                results.log_pass("List comunicados as admin")
+                # Check if we can find our created comunicados
+                found_todos = any(c.get('id') == comunicado_todos_id for c in comunicados) if comunicado_todos_id else True
+                found_lineas = any(c.get('id') == comunicado_lineas_id for c in comunicados) if comunicado_lineas_id else True
+                found_usuarios = any(c.get('id') == comunicado_usuarios_id for c in comunicados) if comunicado_usuarios_id else True
+                
+                if found_todos and found_lineas and found_usuarios:
+                    results.log_pass("Admin can see all created comunicados")
+                else:
+                    results.log_fail("Admin visibility check", "Some created comunicados not visible to admin")
+            else:
+                results.log_fail("List comunicados as admin", "Response is not a list")
+        else:
+            results.log_fail("List comunicados as admin", f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        results.log_fail("List comunicados as admin", f"Request failed: {str(e)}")
+    
+    # Test 5: List comunicados as emisor (should only see relevant ones)
+    print("  📋 Testing list comunicados as emisor...")
+    try:
+        response = requests.get(f"{API_BASE}/comunicados", headers=emisor_headers)
+        
+        if response.status_code == 200:
+            comunicados = response.json()
+            if isinstance(comunicados, list):
+                results.log_pass("List comunicados as emisor")
+                
+                # Emisor should see comunicados for "todos" and their line (A)
+                # Check if emisor can see the "todos" comunicado
+                found_todos = any(c.get('id') == comunicado_todos_id for c in comunicados) if comunicado_todos_id else True
+                # Check if emisor can see line A comunicado (since Luisina is on line A)
+                found_lineas = any(c.get('id') == comunicado_lineas_id for c in comunicados) if comunicado_lineas_id else True
+                
+                if found_todos and found_lineas:
+                    results.log_pass("Emisor can see relevant comunicados (todos and their line)")
+                else:
+                    results.log_fail("Emisor visibility check", "Emisor cannot see expected comunicados")
+            else:
+                results.log_fail("List comunicados as emisor", "Response is not a list")
+        else:
+            results.log_fail("List comunicados as emisor", f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        results.log_fail("List comunicados as emisor", f"Request failed: {str(e)}")
+    
+    # Test 6: Emisor responds to comunicado
+    print("  💬 Testing emisor response to comunicado...")
+    if comunicado_todos_id:
+        try:
+            payload = {"texto": "Gracias por la información. Mensaje recibido correctamente."}
+            response = requests.post(f"{API_BASE}/comunicados/{comunicado_todos_id}/respuestas", 
+                                   headers=emisor_headers, json=payload)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('message') == 'Respuesta agregada':
+                    results.log_pass("Emisor responds to comunicado")
+                else:
+                    results.log_fail("Emisor response validation", "Unexpected response message")
+            else:
+                results.log_fail("Emisor responds to comunicado", f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            results.log_fail("Emisor responds to comunicado", f"Request failed: {str(e)}")
+    else:
+        results.log_fail("Emisor responds to comunicado", "No comunicado available to respond to")
+    
+    # Test 7: Get specific comunicado
+    print("  📄 Testing get specific comunicado...")
+    if comunicado_todos_id:
+        try:
+            response = requests.get(f"{API_BASE}/comunicados/{comunicado_todos_id}", headers=admin_headers)
+            
+            if response.status_code == 200:
+                comunicado = response.json()
+                if comunicado.get('id') == comunicado_todos_id:
+                    results.log_pass("Get specific comunicado")
+                    # Check if response was added
+                    if comunicado.get('respuestas') and len(comunicado['respuestas']) > 0:
+                        results.log_pass("Comunicado contains emisor response")
+                    else:
+                        results.log_fail("Response verification", "No responses found in comunicado")
+                else:
+                    results.log_fail("Get specific comunicado", "Wrong comunicado returned")
+            else:
+                results.log_fail("Get specific comunicado", f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            results.log_fail("Get specific comunicado", f"Request failed: {str(e)}")
+    
+    # Test 8: Delete comunicado (admin only)
+    print("  🗑️ Testing delete comunicado (admin only)...")
+    if comunicado_usuarios_id:
+        try:
+            response = requests.delete(f"{API_BASE}/comunicados/{comunicado_usuarios_id}", headers=admin_headers)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('message') == 'Comunicado eliminado':
+                    results.log_pass("Delete comunicado (admin)")
+                else:
+                    results.log_fail("Delete comunicado validation", "Unexpected response message")
+            else:
+                results.log_fail("Delete comunicado (admin)", f"HTTP {response.status_code}: {response.text}")
+        except Exception as e:
+            results.log_fail("Delete comunicado (admin)", f"Request failed: {str(e)}")
+    
+    # Test 9: Verify emisor cannot delete comunicado
+    print("  🚫 Testing emisor cannot delete comunicado...")
+    if comunicado_lineas_id:
+        try:
+            response = requests.delete(f"{API_BASE}/comunicados/{comunicado_lineas_id}", headers=emisor_headers)
+            
+            if response.status_code == 403:
+                results.log_pass("Emisor cannot delete comunicado (403 Forbidden)")
+            else:
+                results.log_fail("Emisor delete restriction", f"Expected 403, got {response.status_code}")
+        except Exception as e:
+            results.log_fail("Emisor delete restriction", f"Request failed: {str(e)}")
+    
+    return results
+
 def main():
     """Main test execution"""
     print("🚀 Starting Backend API Tests for Sistema de Reclamos Gremiales UTA")
