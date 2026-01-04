@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
@@ -23,7 +23,7 @@ const NuevoReclamo = () => {
   const navigate = useNavigate();
   const { user, getAuthHeaders } = useAuth();
   const [formData, setFormData] = useState({
-    linea: user?.role === 'EMISOR_RECLAMO' ? (user?.linea_asignada || '') : '',
+    linea: '',
     categoria: '',
     sector_estacion: '',
     descripcion: ''
@@ -31,6 +31,16 @@ const NuevoReclamo = () => {
   const [archivos, setArchivos] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Auto-set line for emisores when user data loads
+  useEffect(() => {
+    if (user?.role === 'EMISOR_RECLAMO' && user?.linea_asignada) {
+      setFormData(prev => ({
+        ...prev,
+        linea: user.linea_asignada
+      }));
+    }
+  }, [user]);
 
   // Check if emisor has line assigned
   if (user?.role === 'EMISOR_RECLAMO' && !user?.linea_asignada) {
