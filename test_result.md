@@ -502,3 +502,53 @@ agent_communication:
          - Proper access control for administrative functions
       
       CONCLUSION: All comunicados system backend functionality is working perfectly. The messaging system is fully functional with proper targeting, access control, and notification flows. Backend is ready for production use.
+  - agent: "testing"
+    message: |
+      SEGUNDA RONDA COMPREHENSIVE BACKEND TESTING COMPLETED SUCCESSFULLY - ALL TESTS PASSED (39/39)
+      
+      ✅ ADMIN ACCESS: Direct admin access working perfectly
+      
+      ✅ ALL EMISOR LOGINS VERIFIED:
+         - martin (password: 94017448) - Línea A ✅
+         - Mara (password: 123456) - Línea H ✅  
+         - Luisina (password: 123456) - Línea A ✅
+         - All users receive correct tokens and line assignments
+      
+      ✅ COMUNICADOS FILTERING BY USER LINE:
+         - martin (Línea A) sees: 'todos' + línea A comunicados ✅
+         - Mara (Línea H) sees: 'todos' + línea H comunicados ✅
+         - Luisina (Línea A) sees: 'todos' + línea A comunicados ✅
+         - Admin sees ALL comunicados ✅
+         - Proper filtering prevents cross-line visibility ✅
+      
+      ✅ RECLAMOS FILTERING BY USER:
+         - martin sees only own reclamos (2 reclamos) ✅
+         - Mara sees only own reclamos (1 reclamo) ✅
+         - Luisina sees only own reclamos (2 reclamos) ✅
+         - Admin sees all reclamos from all users (27 total) ✅
+      
+      ✅ INVITATIONS SYSTEM:
+         - GET /api/invitations returns list (14 invitations) ✅
+         - GET /api/invitations/{token} returns correct credentials ✅
+      
+      ✅ NOTIFICATIONS SYSTEM:
+         - Admin notifications working (5 notifications, 2 unread) ✅
+         - martin notifications working (11 notifications, 11 unread) ✅
+         - Mara notifications working (8 notifications, 8 unread) ✅
+         - Luisina notifications working (10 notifications, 10 unread) ✅
+         - All notification endpoints functional ✅
+      
+      ✅ CREATE RECLAMO AS EMISOR:
+         - martin successfully created reclamo: LíneaA-CON-0004 ✅
+         - Proper line validation and reclamo numbering ✅
+      
+      ✅ RESPOND TO COMUNICADO AS EMISOR:
+         - All emisores can respond to comunicados ✅
+         - martin, Mara, Luisina all responded successfully ✅
+      
+      ✅ ADMIN FUNCTIONS:
+         - Admin can see all users (4 total: 1 admin, 3 emisores) ✅
+         - Admin can see statistics (27 total reclamos) ✅
+         - Admin can see all reclamos (27 total) ✅
+      
+      CONCLUSION: SEGUNDA RONDA testing confirms the Sistema de Reclamos Gremiales UTA is fully functional. All user authentication, role-based access control, comunicados filtering, reclamos management, notifications, and admin functions are working perfectly. The system is ready for production use.
