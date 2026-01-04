@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '@/context/AuthContext';
-import { Train, Plus, BarChart3, ClipboardList, LogOut, Users, Key } from 'lucide-react';
+import { Train, Plus, BarChart3, ClipboardList, LogOut, Users, Key, MessageSquare } from 'lucide-react';
 import NotificationBell from '@/components/NotificationBell';
 import CambiarPasswordModal from '@/components/CambiarPasswordModal';
 
