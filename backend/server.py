@@ -942,6 +942,204 @@ async def obtener_estadisticas(current_user: dict = Depends(get_current_user)):
         reclamos_por_mes=por_mes
     )
 
+# ==================== COMUNICADOS ENDPOINTS ====================
+
+async def create_comunicado_notification(user_id: str, comunicado_id: str, titulo: str):
+    """Create a notification for a comunicado"""
+    notification_data = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "reclamo_id": comunicado_id,  # Using reclamo_id field for comunicado_id
+        "reclamo_numero": f"COM-{comunicado_id[:8]}",
+        "message": f"Nuevo comunicado: {titulo}",
+        "is_read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.notifications.insert_one(notification_data)
+
+@api_router.post("/comunicados")
+async def crear_comunicado(
+    titulo: str = Query(...),
+    mensaje: str = Query(...),
+    tipo_destinatario: str = Query(...),
+    lineas_destino: str = Query(default=""),  # Comma-separated
+    usuarios_destino: str = Query(default=""),  # Comma-separated
+    imagen: Optional[UploadFile] = File(default=None),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Create a new comunicado (admin only)"""
+    
+    # Parse comma-separated values
+    lineas_list = [l.strip() for l in lineas_destino.split(",") if l.strip()] if lineas_destino else []
+    usuarios_list = [u.strip() for u in usuarios_destino.split(",") if u.strip()] if usuarios_destino else []
+    
+    # Handle image upload
+    imagen_url = None
+    if imagen:
+        file_id = str(uuid.uuid4())
+        file_extension = Path(imagen.filename).suffix
+        filename = f"comunicado_{file_id}{file_extension}"
+        file_path = UPLOADS_DIR / filename
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(imagen.file, buffer)
+        
+        imagen_url = f"/api/uploads/{filename}"
+    
+    # Create comunicado
+    comunicado = Comunicado(
+        titulo=titulo,
+        mensaje=mensaje,
+        imagen=imagen_url,
+        tipo_destinatario=tipo_destinatario,
+        lineas_destino=lineas_list,
+        usuarios_destino=usuarios_list,
+        autor_id=current_admin["id"],
+        autor_nombre=current_admin["username"]
+    )
+    
+    doc = comunicado.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    
+    await db.comunicados.insert_one(doc)
+    
+    # Send notifications to recipients
+    recipients = []
+    
+    if tipo_destinatario == "todos":
+        # Get all emisores
+        users = await db.users.find({"role": "EMISOR_RECLAMO"}, {"_id": 0}).to_list(1000)
+        recipients = [u["id"] for u in users]
+    elif tipo_destinatario == "lineas":
+        # Get users from specific lines
+        users = await db.users.find({
+            "role": "EMISOR_RECLAMO",
+            "linea_asignada": {"$in": lineas_list}
+        }, {"_id": 0}).to_list(1000)
+        recipients = [u["id"] for u in users]
+    elif tipo_destinatario == "usuarios":
+        recipients = usuarios_list
+    
+    # Create notifications for all recipients
+    for user_id in recipients:
+        await create_comunicado_notification(user_id, comunicado.id, titulo)
+    
+    return {
+        "message": "Comunicado enviado exitosamente",
+        "comunicado_id": comunicado.id,
+        "destinatarios": len(recipients)
+    }
+
+@api_router.get("/comunicados")
+async def obtener_comunicados(current_user: dict = Depends(get_current_user)):
+    """Get comunicados - filtered by user's line if emisor"""
+    
+    if current_user["role"] == "ADMIN":
+        # Admin sees all comunicados
+        comunicados = await db.comunicados.find({}, {"_id": 0}).sort('created_at', -1).to_list(100)
+    else:
+        # Emisor sees comunicados meant for them
+        user_line = current_user.get("linea_asignada")
+        user_id = current_user["id"]
+        
+        comunicados = await db.comunicados.find({
+            "$or": [
+                {"tipo_destinatario": "todos"},
+                {"tipo_destinatario": "lineas", "lineas_destino": user_line},
+                {"tipo_destinatario": "usuarios", "usuarios_destino": user_id}
+            ]
+        }, {"_id": 0}).sort('created_at', -1).to_list(100)
+    
+    # Parse dates
+    for com in comunicados:
+        if isinstance(com['created_at'], str):
+            com['created_at'] = datetime.fromisoformat(com['created_at'])
+        for resp in com.get('respuestas', []):
+            if isinstance(resp.get('created_at'), str):
+                resp['created_at'] = datetime.fromisoformat(resp['created_at'])
+    
+    return comunicados
+
+@api_router.get("/comunicados/{comunicado_id}")
+async def obtener_comunicado(comunicado_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific comunicado"""
+    comunicado = await db.comunicados.find_one({"id": comunicado_id}, {"_id": 0})
+    
+    if not comunicado:
+        raise HTTPException(status_code=404, detail="Comunicado no encontrado")
+    
+    # Check access for emisores
+    if current_user["role"] == "EMISOR_RECLAMO":
+        user_line = current_user.get("linea_asignada")
+        user_id = current_user["id"]
+        
+        has_access = (
+            comunicado["tipo_destinatario"] == "todos" or
+            (comunicado["tipo_destinatario"] == "lineas" and user_line in comunicado.get("lineas_destino", [])) or
+            (comunicado["tipo_destinatario"] == "usuarios" and user_id in comunicado.get("usuarios_destino", []))
+        )
+        
+        if not has_access:
+            raise HTTPException(status_code=403, detail="No tienes acceso a este comunicado")
+    
+    if isinstance(comunicado['created_at'], str):
+        comunicado['created_at'] = datetime.fromisoformat(comunicado['created_at'])
+    
+    for resp in comunicado.get('respuestas', []):
+        if isinstance(resp.get('created_at'), str):
+            resp['created_at'] = datetime.fromisoformat(resp['created_at'])
+    
+    return comunicado
+
+@api_router.post("/comunicados/{comunicado_id}/respuestas")
+async def responder_comunicado(
+    comunicado_id: str,
+    respuesta: ComunicadoRespuestaCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Add a response to a comunicado"""
+    comunicado = await db.comunicados.find_one({"id": comunicado_id})
+    
+    if not comunicado:
+        raise HTTPException(status_code=404, detail="Comunicado no encontrado")
+    
+    # Create response
+    nueva_respuesta = ComunicadoRespuesta(
+        user_id=current_user["id"],
+        username=current_user["username"],
+        texto=respuesta.texto
+    )
+    
+    resp_dict = nueva_respuesta.model_dump()
+    resp_dict['created_at'] = resp_dict['created_at'].isoformat()
+    
+    await db.comunicados.update_one(
+        {"id": comunicado_id},
+        {"$push": {"respuestas": resp_dict}}
+    )
+    
+    # Notify admin if emisor responded
+    if current_user["role"] == "EMISOR_RECLAMO":
+        admins = await db.users.find({"role": "ADMIN"}, {"_id": 0}).to_list(100)
+        for admin in admins:
+            await create_comunicado_notification(
+                admin["id"],
+                comunicado_id,
+                f"Respuesta de {current_user['username']} al comunicado"
+            )
+    
+    return {"message": "Respuesta agregada", "respuesta": resp_dict}
+
+@api_router.delete("/comunicados/{comunicado_id}")
+async def eliminar_comunicado(comunicado_id: str, current_admin: dict = Depends(get_current_admin)):
+    """Delete a comunicado (admin only)"""
+    result = await db.comunicados.delete_one({"id": comunicado_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Comunicado no encontrado")
+    
+    return {"message": "Comunicado eliminado"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
