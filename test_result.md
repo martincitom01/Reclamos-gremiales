@@ -476,3 +476,29 @@ agent_communication:
          - PATCH /api/notifications/{id}/read marks notification as read
       
       CONCLUSION: All notification system backend functionality is working perfectly. The notification flows are properly implemented and tested. Backend is ready for frontend sound integration testing.
+  - agent: "testing"
+    message: |
+      COMUNICADOS SYSTEM BACKEND TESTING COMPLETED SUCCESSFULLY - ALL TESTS PASSED (14/14)
+      
+      ✅ COMUNICADO CREATION FLOWS:
+         - Create comunicado for "todos" (all users) ✅
+         - Create comunicado for specific lines (A,B) ✅
+         - Create comunicado for specific users ✅
+         - All creation scenarios working with proper notification delivery
+      
+      ✅ COMUNICADO ACCESS CONTROL:
+         - Admin can see all comunicados ✅
+         - Emisor sees only relevant comunicados (todos + their line) ✅
+         - Proper filtering by user role and line assignment
+      
+      ✅ COMUNICADO INTERACTIONS:
+         - Emisor can respond to comunicados ✅
+         - Responses are properly stored and displayed ✅
+         - Admin receives notifications when emisor responds ✅
+      
+      ✅ COMUNICADO MANAGEMENT:
+         - Admin can delete comunicados ✅
+         - Emisores cannot delete comunicados (403 Forbidden) ✅
+         - Proper access control for administrative functions
+      
+      CONCLUSION: All comunicados system backend functionality is working perfectly. The messaging system is fully functional with proper targeting, access control, and notification flows. Backend is ready for production use.
