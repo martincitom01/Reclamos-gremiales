@@ -769,7 +769,7 @@ def test_comunicados_system(admin_token, emisor_token):
 def main():
     """Main test execution"""
     print("🚀 Starting Backend API Tests for Sistema de Reclamos Gremiales UTA")
-    print("🔔 Focus: Notification System with Sound Feature")
+    print("📢 Focus: Comunicados (Messaging) System")
     print(f"Testing against: {BASE_URL}")
     print("="*60)
     
@@ -799,45 +799,12 @@ def main():
         all_results.summary()
         return False
     
-    # Test 3: Create Reclamo as Emisor (should trigger admin notification)
-    print("\n📝 Testing Reclamo Creation (should trigger admin notification)...")
-    reclamo, reclamo_results = test_create_reclamo_as_emisor(emisor_token)
-    all_results.passed += reclamo_results.passed
-    all_results.failed += reclamo_results.failed
-    all_results.errors.extend(reclamo_results.errors)
-    
-    if not reclamo:
-        print("❌ Cannot proceed without created reclamo")
-        all_results.summary()
-        return False
-    
-    # Test 4: Check Admin Notifications
-    print("\n🔔 Testing Admin Receives Notification for New Reclamo...")
-    admin_notification, admin_notif_results = test_admin_notifications_after_reclamo_creation(admin_token, reclamo)
-    all_results.passed += admin_notif_results.passed
-    all_results.failed += admin_notif_results.failed
-    all_results.errors.extend(admin_notif_results.errors)
-    
-    # Test 5: Admin Responds to Reclamo (should trigger emisor notification)
-    print("\n💬 Testing Admin Response (should trigger emisor notification)...")
-    comment, comment_results = test_admin_add_comment_to_reclamo(admin_token, reclamo)
-    all_results.passed += comment_results.passed
-    all_results.failed += comment_results.failed
-    all_results.errors.extend(comment_results.errors)
-    
-    # Test 6: Check Emisor Notifications
-    print("\n🔔 Testing Emisor Receives Notification for Admin Response...")
-    emisor_notification, emisor_notif_results = test_emisor_notifications_after_admin_response(emisor_token, reclamo)
-    all_results.passed += emisor_notif_results.passed
-    all_results.failed += emisor_notif_results.failed
-    all_results.errors.extend(emisor_notif_results.errors)
-    
-    # Test 7: Notification Endpoints Validation
-    print("\n🔗 Testing Notification Endpoints...")
-    endpoint_results = test_notification_endpoints(admin_token)
-    all_results.passed += endpoint_results.passed
-    all_results.failed += endpoint_results.failed
-    all_results.errors.extend(endpoint_results.errors)
+    # Test 3: Comunicados System (Main Focus)
+    print("\n📢 Testing Comunicados (Messaging) System...")
+    comunicados_results = test_comunicados_system(admin_token, emisor_token)
+    all_results.passed += comunicados_results.passed
+    all_results.failed += comunicados_results.failed
+    all_results.errors.extend(comunicados_results.errors)
     
     # Final summary
     success = all_results.summary()
