@@ -263,7 +263,7 @@ Usuario creado exitosamente:
                       data-testid="generate-invitation-btn"
                     >
                       <LinkIcon size={18} style={{display: 'inline', marginRight: '6px'}} />
-                      Generar Link de Invitaci\u00f3n
+                      Generar Link de Invitación
                     </button>
                     <button 
                       className="btn-primary" 
