@@ -14,7 +14,7 @@ const LINEAS = ['A', 'B', 'C', 'D', 'E', 'H', 'Premetro'];
 
 const Comunicados = () => {
   const navigate = useNavigate();
-  const { getAuthHeaders, user } = useAuth();
+  const { getAuthHeaders, user, isAuthenticated } = useAuth();
   const [comunicados, setComunicados] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,20 +32,46 @@ const Comunicados = () => {
   });
 
   useEffect(() => {
-    cargarDatos();
+    initializePage();
   }, []);
+
+  const initializePage = async () => {
+    // If not authenticated and no admin initialized, get admin access
+    if (!isAuthenticated && !localStorage.getItem('token') && !localStorage.getItem('adminInitialized')) {
+      try {
+        const response = await axios.get(`${API}/admin/access`);
+        localStorage.setItem('token', response.data.access_token);
+        localStorage.setItem('adminInitialized', 'true');
+        window.location.reload();
+      } catch (error) {
+        console.error('Error getting admin access:', error);
+        navigate('/emisor-login');
+      }
+    } else {
+      cargarDatos();
+    }
+  };
 
   const cargarDatos = async () => {
     try {
-      const [comResponse, usersResponse] = await Promise.all([
-        axios.get(`${API}/comunicados`, { headers: getAuthHeaders() }),
-        axios.get(`${API}/users`, { headers: getAuthHeaders() })
+      const headers = getAuthHeaders();
+      const [comResponse] = await Promise.all([
+        axios.get(`${API}/comunicados`, { headers })
       ]);
       setComunicados(comResponse.data);
-      setUsuarios(usersResponse.data.filter(u => u.role === 'EMISOR_RECLAMO'));
+      
+      // Only load users if admin
+      if (user?.role === 'ADMIN') {
+        const usersResponse = await axios.get(`${API}/users`, { headers });
+        setUsuarios(usersResponse.data.filter(u => u.role === 'EMISOR_RECLAMO'));
+      }
     } catch (error) {
       console.error('Error cargando datos:', error);
-      toast.error('Error al cargar comunicados');
+      if (error.response?.status === 401) {
+        navigate('/emisor-login');
+      } else {
+        toast.error('Error al cargar comunicados');
+      }
     } finally {
       setLoading(false);
     }
