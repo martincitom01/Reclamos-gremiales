@@ -126,11 +126,14 @@ backend:
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: true
         agent: "main"
         comment: "Implemented new PUT endpoint to update user info (username, email, password, linea_asignada). Tested via curl - works correctly."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: All user update scenarios working perfectly. ✅ Username updates ✅ Email updates ✅ Password updates (with proper hashing) ✅ Linea_asignada updates ✅ Password validation (min 6 chars) ✅ Username uniqueness validation ✅ Email uniqueness validation. All validation errors return proper 400 status codes."
 
 frontend:
   - task: "View attached files/images in reclamo detail"
