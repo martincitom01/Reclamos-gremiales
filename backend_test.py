@@ -1255,16 +1255,16 @@ def test_comunicados_system(admin_token, emisor_token):
     return results
 
 def main():
-    """Main test execution"""
+    """Main test execution - SEGUNDA RONDA comprehensive testing"""
     print("🚀 Starting Backend API Tests for Sistema de Reclamos Gremiales UTA")
-    print("📢 Focus: Comunicados (Messaging) System")
+    print("📋 SEGUNDA RONDA - Comprehensive System Testing")
     print(f"Testing against: {BASE_URL}")
-    print("="*60)
+    print("="*80)
     
     all_results = TestResults()
     
     # Test 1: Admin Access
-    print("\n📋 Testing Admin Access...")
+    print("\n🔑 Testing Admin Access...")
     admin_token, admin_results = test_admin_access()
     all_results.passed += admin_results.passed
     all_results.failed += admin_results.failed
@@ -1275,27 +1275,77 @@ def main():
         all_results.summary()
         return False
     
-    # Test 2: Emisor Login
-    print("\n👤 Testing Emisor Login (Luisina)...")
-    emisor_token, emisor_user, emisor_results = test_emisor_login()
-    all_results.passed += emisor_results.passed
-    all_results.failed += emisor_results.failed
-    all_results.errors.extend(emisor_results.errors)
+    # Test 2: All Emisor Logins
+    print("\n👥 Testing All Emisor Logins (martin, Mara, Luisina)...")
+    user_tokens, login_results = test_all_emisor_logins()
+    all_results.passed += login_results.passed
+    all_results.failed += login_results.failed
+    all_results.errors.extend(login_results.errors)
     
-    if not emisor_token:
-        print("❌ Cannot proceed without emisor token")
+    if not user_tokens:
+        print("❌ Cannot proceed without user tokens")
         all_results.summary()
         return False
     
-    # Test 3: Comunicados System (Main Focus)
-    print("\n📢 Testing Comunicados (Messaging) System...")
-    comunicados_results = test_comunicados_system(admin_token, emisor_token)
+    # Test 3: Comunicados Filtering by User
+    print("\n📢 Testing Comunicados Filtering by User Line...")
+    comunicados_results = test_comunicados_filtering_by_user(admin_token, user_tokens)
     all_results.passed += comunicados_results.passed
     all_results.failed += comunicados_results.failed
     all_results.errors.extend(comunicados_results.errors)
     
+    # Test 4: Reclamos Filtering by User
+    print("\n📋 Testing Reclamos Filtering by User...")
+    reclamos_results = test_reclamos_filtering_by_user(admin_token, user_tokens)
+    all_results.passed += reclamos_results.passed
+    all_results.failed += reclamos_results.failed
+    all_results.errors.extend(reclamos_results.errors)
+    
+    # Test 5: Invitations Endpoints
+    print("\n📨 Testing Invitations Endpoints...")
+    invitations_results = test_invitations_endpoints(admin_token)
+    all_results.passed += invitations_results.passed
+    all_results.failed += invitations_results.failed
+    all_results.errors.extend(invitations_results.errors)
+    
+    # Test 6: Notifications Endpoints
+    print("\n🔔 Testing Notifications Endpoints...")
+    notifications_results = test_notifications_endpoints(admin_token, user_tokens)
+    all_results.passed += notifications_results.passed
+    all_results.failed += notifications_results.failed
+    all_results.errors.extend(notifications_results.errors)
+    
+    # Test 7: Create Reclamo as Emisor
+    print("\n📝 Testing Create Reclamo as Emisor...")
+    new_reclamo, create_results = test_create_reclamo_as_emisor(user_tokens)
+    all_results.passed += create_results.passed
+    all_results.failed += create_results.failed
+    all_results.errors.extend(create_results.errors)
+    
+    # Test 8: Respond to Comunicado as Emisor
+    print("\n💬 Testing Respond to Comunicado as Emisor...")
+    respond_results = test_respond_to_comunicado_as_emisor(user_tokens, admin_token)
+    all_results.passed += respond_results.passed
+    all_results.failed += respond_results.failed
+    all_results.errors.extend(respond_results.errors)
+    
+    # Test 9: Admin Functions
+    print("\n👑 Testing Admin Functions...")
+    admin_func_results = test_admin_functions(admin_token)
+    all_results.passed += admin_func_results.passed
+    all_results.failed += admin_func_results.failed
+    all_results.errors.extend(admin_func_results.errors)
+    
     # Final summary
+    print(f"\n{'='*80}")
+    print("🏁 SEGUNDA RONDA TESTING COMPLETE")
     success = all_results.summary()
+    
+    if success:
+        print("\n✅ ALL TESTS PASSED - Sistema de Reclamos Gremiales UTA is working correctly!")
+    else:
+        print(f"\n❌ {all_results.failed} TESTS FAILED - See details above")
+    
     return success
 
 if __name__ == "__main__":
