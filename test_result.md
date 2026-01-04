@@ -234,24 +234,32 @@ agent_communication:
       CONCLUSION: Both requested features are fully functional. No critical issues found. Ready for production use.
   - agent: "main"
     message: |
-      NOTIFICATION SOUND FEATURE IMPLEMENTED:
+      COMUNICADOS FEATURE IMPLEMENTED:
       
-      Backend changes:
-      - Modified crear_reclamo endpoint to notify all admins when a new reclamo is created
+      Backend endpoints (server.py):
+      - POST /api/comunicados - Create comunicado (admin only)
+      - GET /api/comunicados - List comunicados (filtered by user role/line)
+      - GET /api/comunicados/{id} - Get single comunicado
+      - POST /api/comunicados/{id}/respuestas - Add response to comunicado
+      - DELETE /api/comunicados/{id} - Delete comunicado (admin only)
       
-      Frontend changes (NotificationBell.js):
-      - Added Web Audio API for notification sound (pleasant two-tone chime)
-      - Added sound toggle button (Volume2/VolumeX icons)
-      - Reduced polling interval from 30s to 10s for faster notifications
-      - Sound plays when NEW notifications arrive (not on initial load)
-      - Browser notification API integration for system-level notifications
-      - Sound preference saved to localStorage
+      Frontend:
+      - New page: /comunicados (Comunicados.js)
+      - Form to create comunicado with:
+        - Title, message, optional image
+        - Recipient selection: Todos, Por Linea (A,B,C,D,E,H,Premetro), Usuarios específicos
+      - List of comunicados with expand/collapse
+      - Response form for emisores
+      - Notifications sent when comunicado created
       
-      Testing needed:
-      - Test creating new reclamo as emisor → admin should receive notification with sound
-      - Test admin responding to reclamo → emisor should receive notification with sound
-      - Test sound toggle button (on/off)
-      - Test that sound only plays for NEW notifications, not on page refresh
+      Test scenarios needed:
+      1. Admin creates comunicado for "todos" → all emisores receive it
+      2. Admin creates comunicado for specific lines → only those lines receive it
+      3. Admin creates comunicado for specific users → only those users receive it
+      4. Emisor responds to comunicado → response appears in list
+      5. Admin receives notification when emisor responds
+      6. Admin can delete comunicados
+      7. Emisores cannot delete comunicados
 
 backend:
   - task: "Notification system - Admin receives notification when new reclamo is created"
@@ -349,24 +357,32 @@ agent_communication:
       CONCLUSION: Both requested features are fully functional. No critical issues found. Ready for production use.
   - agent: "main"
     message: |
-      NOTIFICATION SOUND FEATURE IMPLEMENTED:
+      COMUNICADOS FEATURE IMPLEMENTED:
       
-      Backend changes:
-      - Modified crear_reclamo endpoint to notify all admins when a new reclamo is created
+      Backend endpoints (server.py):
+      - POST /api/comunicados - Create comunicado (admin only)
+      - GET /api/comunicados - List comunicados (filtered by user role/line)
+      - GET /api/comunicados/{id} - Get single comunicado
+      - POST /api/comunicados/{id}/respuestas - Add response to comunicado
+      - DELETE /api/comunicados/{id} - Delete comunicado (admin only)
       
-      Frontend changes (NotificationBell.js):
-      - Added Web Audio API for notification sound (pleasant two-tone chime)
-      - Added sound toggle button (Volume2/VolumeX icons)
-      - Reduced polling interval from 30s to 10s for faster notifications
-      - Sound plays when NEW notifications arrive (not on initial load)
-      - Browser notification API integration for system-level notifications
-      - Sound preference saved to localStorage
+      Frontend:
+      - New page: /comunicados (Comunicados.js)
+      - Form to create comunicado with:
+        - Title, message, optional image
+        - Recipient selection: Todos, Por Linea (A,B,C,D,E,H,Premetro), Usuarios específicos
+      - List of comunicados with expand/collapse
+      - Response form for emisores
+      - Notifications sent when comunicado created
       
-      Testing needed:
-      - Test creating new reclamo as emisor → admin should receive notification with sound
-      - Test admin responding to reclamo → emisor should receive notification with sound
-      - Test sound toggle button (on/off)
-      - Test that sound only plays for NEW notifications, not on page refresh
+      Test scenarios needed:
+      1. Admin creates comunicado for "todos" → all emisores receive it
+      2. Admin creates comunicado for specific lines → only those lines receive it
+      3. Admin creates comunicado for specific users → only those users receive it
+      4. Emisor responds to comunicado → response appears in list
+      5. Admin receives notification when emisor responds
+      6. Admin can delete comunicados
+      7. Emisores cannot delete comunicados
   - agent: "testing"
     message: |
       NOTIFICATION SYSTEM BACKEND TESTING COMPLETED SUCCESSFULLY - ALL TESTS PASSED (11/11)
