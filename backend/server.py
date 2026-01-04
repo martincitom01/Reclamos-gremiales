@@ -81,6 +81,12 @@ class ChangePasswordRequest(BaseModel):
 class AdminChangePasswordRequest(BaseModel):
     new_password: str
 
+class UserUpdateRequest(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    linea_asignada: Optional[str] = None
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
