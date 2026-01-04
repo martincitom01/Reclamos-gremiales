@@ -66,6 +66,7 @@ function App() {
             <Route path="/reclamo/:id" element={<ProtectedRoute><DetalleReclamo /></ProtectedRoute>} />
             <Route path="/estadisticas" element={<Estadisticas />} />
             <Route path="/usuarios" element={<GestionUsuarios />} />
+            <Route path="/comunicados" element={<ProtectedRoute><Comunicados /></ProtectedRoute>} />
           </Routes>
           <Toaster position="top-right" richColors />
         </AuthProvider>
