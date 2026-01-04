@@ -576,7 +576,7 @@ async def create_invitation(invitation_data: InvitationCreate, current_admin: di
     await db.invitations.insert_one(doc)
     
     # Generate invitation link
-    base_url = os.environ.get('FRONTEND_URL', 'https://reclamos-metro.preview.emergentagent.com')
+    base_url = os.environ.get('FRONTEND_URL', 'https://metrofix-1.preview.emergentagent.com')
     invitation_link = f"{base_url}/invitacion/{invitation.token}"
     
     return InvitationResponse(
