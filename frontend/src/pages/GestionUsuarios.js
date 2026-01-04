@@ -145,6 +145,11 @@ Usuario creado exitosamente:
     }
   };
 
+  const handleEditUser = (usuario) => {
+    setUsuarioEditar(usuario);
+    setShowEditModal(true);
+  };
+
   const formatearFecha = (fecha) => {
     try {
       return format(new Date(fecha), 'dd/MM/yyyy', { locale: es });
