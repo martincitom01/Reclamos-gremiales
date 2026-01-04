@@ -313,9 +313,234 @@ def test_user_update_endpoint(token, test_user):
     
     return results
 
+def test_emisor_login():
+    """Test emisor login with Luisina credentials"""
+    results = TestResults()
+    
+    try:
+        payload = {
+            "username": "Luisina",
+            "password": "123456"
+        }
+        response = requests.post(f"{API_BASE}/auth/login", json=payload)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if 'access_token' in data and 'user' in data:
+                user = data['user']
+                if user.get('username') == 'Luisina' and user.get('linea_asignada') == 'A':
+                    results.log_pass("Emisor login (Luisina) successful")
+                    return data['access_token'], user, results
+                else:
+                    results.log_fail("Emisor login validation", f"User data incorrect: {user}")
+                    return None, None, results
+            else:
+                results.log_fail("Emisor login", "Missing access_token or user in response")
+                return None, None, results
+        else:
+            results.log_fail("Emisor login", f"HTTP {response.status_code}: {response.text}")
+            return None, None, results
+            
+    except Exception as e:
+        results.log_fail("Emisor login", f"Request failed: {str(e)}")
+        return None, None, results
+
+def test_create_reclamo_as_emisor(emisor_token):
+    """Create a new reclamo as emisor to trigger admin notification"""
+    results = TestResults()
+    headers = {"Authorization": f"Bearer {emisor_token}", "Content-Type": "application/json"}
+    
+    try:
+        payload = {
+            "linea": "A",
+            "categoria": "Condiciones de trabajo",
+            "sector_estacion": "Estación Central",
+            "descripcion": "Test reclamo para verificar notificaciones - problema con ventilación en cabina"
+        }
+        response = requests.post(f"{API_BASE}/reclamos", headers=headers, json=payload)
+        
+        if response.status_code == 200:
+            reclamo = response.json()
+            if reclamo.get('numero_reclamo') and reclamo.get('id'):
+                results.log_pass("Create reclamo as emisor")
+                return reclamo, results
+            else:
+                results.log_fail("Create reclamo validation", "Missing numero_reclamo or id in response")
+                return None, results
+        else:
+            results.log_fail("Create reclamo as emisor", f"HTTP {response.status_code}: {response.text}")
+            return None, results
+            
+    except Exception as e:
+        results.log_fail("Create reclamo as emisor", f"Request failed: {str(e)}")
+        return None, results
+
+def test_admin_notifications_after_reclamo_creation(admin_token, reclamo):
+    """Test that admin receives notification after reclamo creation"""
+    results = TestResults()
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    
+    try:
+        # Get admin notifications
+        response = requests.get(f"{API_BASE}/notifications", headers=headers)
+        
+        if response.status_code == 200:
+            notifications = response.json()
+            results.log_pass("Get admin notifications endpoint")
+            
+            # Look for notification about the created reclamo
+            reclamo_notification = None
+            for notif in notifications:
+                if (notif.get('reclamo_id') == reclamo['id'] and 
+                    reclamo['numero_reclamo'] in notif.get('message', '')):
+                    reclamo_notification = notif
+                    break
+            
+            if reclamo_notification:
+                results.log_pass("Admin received notification for new reclamo")
+                return reclamo_notification, results
+            else:
+                results.log_fail("Admin notification check", f"No notification found for reclamo {reclamo['numero_reclamo']}")
+                return None, results
+        else:
+            results.log_fail("Get admin notifications", f"HTTP {response.status_code}: {response.text}")
+            return None, results
+            
+    except Exception as e:
+        results.log_fail("Get admin notifications", f"Request failed: {str(e)}")
+        return None, results
+
+def test_admin_add_comment_to_reclamo(admin_token, reclamo):
+    """Test admin adding comment to reclamo to trigger emisor notification"""
+    results = TestResults()
+    headers = {"Authorization": f"Bearer {admin_token}", "Content-Type": "application/json"}
+    
+    try:
+        payload = {
+            "text": "Hemos recibido tu reclamo y estamos investigando el problema de ventilación. Te mantendremos informado.",
+            "author": "Administrador"
+        }
+        response = requests.post(f"{API_BASE}/reclamos/{reclamo['id']}/comentarios", headers=headers, json=payload)
+        
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('message') == 'Comentario agregado':
+                results.log_pass("Admin add comment to reclamo")
+                return data.get('comentario'), results
+            else:
+                results.log_fail("Admin comment validation", "Unexpected response message")
+                return None, results
+        else:
+            results.log_fail("Admin add comment", f"HTTP {response.status_code}: {response.text}")
+            return None, results
+            
+    except Exception as e:
+        results.log_fail("Admin add comment", f"Request failed: {str(e)}")
+        return None, results
+
+def test_emisor_notifications_after_admin_response(emisor_token, reclamo):
+    """Test that emisor receives notification after admin responds"""
+    results = TestResults()
+    headers = {"Authorization": f"Bearer {emisor_token}"}
+    
+    try:
+        # Get emisor notifications
+        response = requests.get(f"{API_BASE}/notifications", headers=headers)
+        
+        if response.status_code == 200:
+            notifications = response.json()
+            results.log_pass("Get emisor notifications endpoint")
+            
+            # Look for notification about admin response
+            admin_response_notification = None
+            for notif in notifications:
+                if (notif.get('reclamo_id') == reclamo['id'] and 
+                    'administrador ha respondido' in notif.get('message', '').lower()):
+                    admin_response_notification = notif
+                    break
+            
+            if admin_response_notification:
+                results.log_pass("Emisor received notification for admin response")
+                return admin_response_notification, results
+            else:
+                results.log_fail("Emisor notification check", f"No admin response notification found for reclamo {reclamo['numero_reclamo']}")
+                return None, results
+        else:
+            results.log_fail("Get emisor notifications", f"HTTP {response.status_code}: {response.text}")
+            return None, results
+            
+    except Exception as e:
+        results.log_fail("Get emisor notifications", f"Request failed: {str(e)}")
+        return None, results
+
+def test_notification_endpoints(admin_token):
+    """Test all notification-related endpoints"""
+    results = TestResults()
+    headers = {"Authorization": f"Bearer {admin_token}"}
+    
+    # Test 1: GET /api/notifications
+    try:
+        response = requests.get(f"{API_BASE}/notifications", headers=headers)
+        if response.status_code == 200:
+            notifications = response.json()
+            if isinstance(notifications, list):
+                results.log_pass("GET /api/notifications returns list")
+            else:
+                results.log_fail("GET /api/notifications", "Response is not a list")
+        else:
+            results.log_fail("GET /api/notifications", f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        results.log_fail("GET /api/notifications", f"Request failed: {str(e)}")
+    
+    # Test 2: GET /api/notifications/unread/count
+    try:
+        response = requests.get(f"{API_BASE}/notifications/unread/count", headers=headers)
+        if response.status_code == 200:
+            data = response.json()
+            if 'count' in data and isinstance(data['count'], int):
+                results.log_pass("GET /api/notifications/unread/count returns count")
+            else:
+                results.log_fail("GET /api/notifications/unread/count", "Missing or invalid count field")
+        else:
+            results.log_fail("GET /api/notifications/unread/count", f"HTTP {response.status_code}: {response.text}")
+    except Exception as e:
+        results.log_fail("GET /api/notifications/unread/count", f"Request failed: {str(e)}")
+    
+    # Test 3: PATCH /api/notifications/{id}/read (need to find an unread notification first)
+    try:
+        # Get notifications to find an unread one
+        response = requests.get(f"{API_BASE}/notifications", headers=headers)
+        if response.status_code == 200:
+            notifications = response.json()
+            unread_notification = None
+            for notif in notifications:
+                if not notif.get('is_read', True):
+                    unread_notification = notif
+                    break
+            
+            if unread_notification:
+                # Mark as read
+                notif_id = unread_notification['id']
+                response = requests.patch(f"{API_BASE}/notifications/{notif_id}/read", headers=headers)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get('message') == 'Notification marked as read':
+                        results.log_pass("PATCH /api/notifications/{id}/read marks notification as read")
+                    else:
+                        results.log_fail("PATCH /api/notifications/{id}/read", "Unexpected response message")
+                else:
+                    results.log_fail("PATCH /api/notifications/{id}/read", f"HTTP {response.status_code}: {response.text}")
+            else:
+                results.log_pass("PATCH /api/notifications/{id}/read (no unread notifications to test)")
+    except Exception as e:
+        results.log_fail("PATCH /api/notifications/{id}/read", f"Request failed: {str(e)}")
+    
+    return results
+
 def main():
     """Main test execution"""
     print("🚀 Starting Backend API Tests for Sistema de Reclamos Gremiales UTA")
+    print("🔔 Focus: Notification System with Sound Feature")
     print(f"Testing against: {BASE_URL}")
     print("="*60)
     
@@ -323,45 +548,67 @@ def main():
     
     # Test 1: Admin Access
     print("\n📋 Testing Admin Access...")
-    token, admin_results = test_admin_access()
+    admin_token, admin_results = test_admin_access()
     all_results.passed += admin_results.passed
     all_results.failed += admin_results.failed
     all_results.errors.extend(admin_results.errors)
     
-    if not token:
+    if not admin_token:
         print("❌ Cannot proceed without admin token")
         all_results.summary()
         return False
     
-    # Test 2: File/Image Accessibility
-    print("\n📁 Testing File/Image Accessibility...")
-    reclamo_with_files, reclamo_results = test_get_reclamos(token)
+    # Test 2: Emisor Login
+    print("\n👤 Testing Emisor Login (Luisina)...")
+    emisor_token, emisor_user, emisor_results = test_emisor_login()
+    all_results.passed += emisor_results.passed
+    all_results.failed += emisor_results.failed
+    all_results.errors.extend(emisor_results.errors)
+    
+    if not emisor_token:
+        print("❌ Cannot proceed without emisor token")
+        all_results.summary()
+        return False
+    
+    # Test 3: Create Reclamo as Emisor (should trigger admin notification)
+    print("\n📝 Testing Reclamo Creation (should trigger admin notification)...")
+    reclamo, reclamo_results = test_create_reclamo_as_emisor(emisor_token)
     all_results.passed += reclamo_results.passed
     all_results.failed += reclamo_results.failed
     all_results.errors.extend(reclamo_results.errors)
     
-    if reclamo_with_files:
-        file_results = test_file_accessibility(reclamo_with_files)
-        all_results.passed += file_results.passed
-        all_results.failed += file_results.failed
-        all_results.errors.extend(file_results.errors)
-    else:
-        print("⚠️  No reclamos with files found - skipping file accessibility tests")
+    if not reclamo:
+        print("❌ Cannot proceed without created reclamo")
+        all_results.summary()
+        return False
     
-    # Test 3: User Update Endpoint
-    print("\n👤 Testing User Update Endpoint...")
-    test_user, user_results = test_get_users(token)
-    all_results.passed += user_results.passed
-    all_results.failed += user_results.failed
-    all_results.errors.extend(user_results.errors)
+    # Test 4: Check Admin Notifications
+    print("\n🔔 Testing Admin Receives Notification for New Reclamo...")
+    admin_notification, admin_notif_results = test_admin_notifications_after_reclamo_creation(admin_token, reclamo)
+    all_results.passed += admin_notif_results.passed
+    all_results.failed += admin_notif_results.failed
+    all_results.errors.extend(admin_notif_results.errors)
     
-    if test_user:
-        update_results = test_user_update_endpoint(token, test_user)
-        all_results.passed += update_results.passed
-        all_results.failed += update_results.failed
-        all_results.errors.extend(update_results.errors)
-    else:
-        print("⚠️  No test user found - skipping user update tests")
+    # Test 5: Admin Responds to Reclamo (should trigger emisor notification)
+    print("\n💬 Testing Admin Response (should trigger emisor notification)...")
+    comment, comment_results = test_admin_add_comment_to_reclamo(admin_token, reclamo)
+    all_results.passed += comment_results.passed
+    all_results.failed += comment_results.failed
+    all_results.errors.extend(comment_results.errors)
+    
+    # Test 6: Check Emisor Notifications
+    print("\n🔔 Testing Emisor Receives Notification for Admin Response...")
+    emisor_notification, emisor_notif_results = test_emisor_notifications_after_admin_response(emisor_token, reclamo)
+    all_results.passed += emisor_notif_results.passed
+    all_results.failed += emisor_notif_results.failed
+    all_results.errors.extend(emisor_notif_results.errors)
+    
+    # Test 7: Notification Endpoints Validation
+    print("\n🔗 Testing Notification Endpoints...")
+    endpoint_results = test_notification_endpoints(admin_token)
+    all_results.passed += endpoint_results.passed
+    all_results.failed += endpoint_results.failed
+    all_results.errors.extend(endpoint_results.errors)
     
     # Final summary
     success = all_results.summary()
