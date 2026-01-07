@@ -1,0 +1,27 @@
+Run state snapshot
+===================
+
+Date: 2026-01-07
+
+Backend (uvicorn):
+- uvicorn process entry: /usr/local/python/3.12.1/bin/python3 /home/codespace/.python/current/bin/uvicorn backend.server:app --host 0.0.0.0 --port 8000 --reload
+- PID (uvicorn): 11178
+- Listening process PID: 14362
+- URL: http://localhost:8000
+
+Docker (Mongo):
+- Container name: reclamos-mongo
+- Container ID: 8e887dc1ec24
+- Status: Up
+- Container IP: 172.17.0.2
+
+Network / Host IPs:
+- Host IPs: 10.0.11.157 172.17.0.1
+
+Listening ports:
+- 0.0.0.0:8000 (python3 / uvicorn)
+
+Notes:
+- Backend and Mongo left running per user request.
+- To stop Mongo: `docker stop reclamos-mongo`
+- To stop backend: `pkill -f 'uvicorn backend.server'`
